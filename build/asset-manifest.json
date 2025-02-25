@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/static/css/main.90d60468.css",
-    "main.js": "/static/js/main.ddc59ee0.js",
-    "index.html": "/index.html",
-    "main.90d60468.css.map": "/static/css/main.90d60468.css.map",
-    "main.ddc59ee0.js.map": "/static/js/main.ddc59ee0.js.map"
+    "main.css": "/PoliticalCHESS-MEME-edition-/static/css/main.eade73ee.css",
+    "main.js": "/PoliticalCHESS-MEME-edition-/static/js/main.df283806.js",
+    "index.html": "/PoliticalCHESS-MEME-edition-/index.html",
+    "main.eade73ee.css.map": "/PoliticalCHESS-MEME-edition-/static/css/main.eade73ee.css.map",
+    "main.df283806.js.map": "/PoliticalCHESS-MEME-edition-/static/js/main.df283806.js.map"
   },
   "entrypoints": [
-    "static/css/main.90d60468.css",
-    "static/js/main.ddc59ee0.js"
+    "static/css/main.eade73ee.css",
+    "static/js/main.df283806.js"
   ]
 }

@@ -83,13 +83,49 @@ body {
 
 .chessboard {
   position: relative;
-  width: 320px;
-  height: 320px;
+  width: 360px;
+  height: 360px;
   max-width: 95vw;
   max-height: 95vw;
   border: 2px solid var(--border-color);
   margin: 0 auto 15px auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Responsive sizing for mobile devices */
+@media (max-width: 767px) {
+  .chessboard {
+    max-width: 98vw; /* Almost full width of viewport */
+    max-height: 98vw;
+  }
+  
+  .game-container {
+    padding: 3px;
+  }
+  
+  .game-controls {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0;
+  }
+  
+  .restart-button, .theme-toggle-button {
+    padding: 7px 14px;
+    font-size: 14px;
+  }
+  
+  .game-mode-controls {
+    padding: 8px;
+    margin: 8px 0;
+  }
+  
+  .winner-content h2 {
+    font-size: 1.8rem;
+  }
+  
+  .winner-trophy {
+    width: 140px;
+  }
 }
 
 /* Responsive sizing for desktop */
@@ -337,7 +373,7 @@ body {
 /* Captured pieces section */
 .captured-pieces {
   width: 100%;
-  max-width: 320px;
+  max-width: 360px;
   display: flex;
   flex-direction: column;
   margin: 0 auto;
@@ -456,6 +492,28 @@ body {
   to {
     opacity: 1;
     transform: translateX(-50%) scale(1);
+  }
+}
+
+/* Responsive sizing for mobile devices */
+@media (max-width: 767px) {
+  .captured-pieces {
+    max-width: 360px; /* Match the chessboard width */
+  }
+  
+  .captured-piece-container {
+    padding: 6px;
+  }
+  
+  .captured-piece-icon {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@media (min-width: 768px) {
+  .captured-pieces {
+    max-width: 480px; /* Match desktop chessboard width */
   }
 }
 
