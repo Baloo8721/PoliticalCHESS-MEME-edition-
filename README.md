@@ -1,6 +1,6 @@
-# Political CHESS
+# Political CHESS MEME Edition
 
-A political-themed chess game featuring US political figures as chess pieces. Play chess with a twist, where Republican (Red) and Democrat (Blue) figures face off in a classic game of strategy.
+A political-themed chess game featuring US political figures as chess pieces. Play chess with a twist, where Republican (Red) and Democrat (Blue) figures face off in a classic game of strategy, with memes displayed when capturing pieces!
 
 ## Features
 
@@ -10,6 +10,9 @@ A political-themed chess game featuring US political figures as chess pieces. Pl
 - Captured pieces display
 - Meme reactions for captured pieces
 - Red (Republican) vs Blue (Democrat) teams
+- Dark/Light mode toggle
+- Background music with volume control
+- Player vs Player and Player vs Computer game modes
 
 ## Getting Started
 
@@ -54,12 +57,12 @@ This project was created with Create React App and uses:
 
 ### Play Now
 The game is hosted on GitHub Pages and can be played directly in your browser:
-[Play Political CHESS](https://tylerbelisle.github.io/PoliticalCHESS)
+[Play Political CHESS](https://Baloo8721.github.io/PoliticalCHESS-MEME-edition-)
 
 ### Sharing with Friends
 To share the game with friends, simply send them the GitHub Pages URL:
 ```
-https://tylerbelisle.github.io/PoliticalCHESS
+https://Baloo8721.github.io/PoliticalCHESS-MEME-edition-
 ```
 
 ### Hosting Your Own Copy
@@ -68,7 +71,7 @@ If you want to host your own copy of the game:
 1. Fork this repository on GitHub
 2. Clone your fork:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/PoliticalCHESS.git
+   git clone https://github.com/YOUR_USERNAME/PoliticalCHESS-MEME-edition-.git
    ```
 3. Install dependencies:
    ```bash
@@ -80,7 +83,7 @@ If you want to host your own copy of the game:
    ```
 5. Your game will be available at:
    ```
-   https://YOUR_USERNAME.github.io/PoliticalCHESS
+   https://YOUR_USERNAME.github.io/PoliticalCHESS-MEME-edition-
    ```
 
 ## Game Modes
