@@ -1235,15 +1235,21 @@ const Chessboard = () => {
   const changeMusic = (musicType) => {
     setCurrentMusic(musicType);
     if (audioRef.current) {
-      const musicFileName = musicType === 'lofi' ? 'politcal party lofi.mp3' : 'Degen.mp3';
-      const musicPath = process.env.NODE_ENV === 'production' 
-        ? `${process.env.PUBLIC_URL}/assets/audio/${musicFileName}`
-        : `/assets/audio/${musicFileName}`;
+      const musicFileName = musicType === 'lofi' 
+        ? 'politcal party lofi.mp3' 
+        : 'Degen.mp3';
+      
+      const musicPath = `${process.env.PUBLIC_URL}/assets/audio/${musicFileName}`;
+      
+      console.log('Changing music:', musicType, 'Path:', musicPath);
       
       audioRef.current.src = musicPath;
       audioRef.current.load();
+      
       if (!isMuted) {
-        audioRef.current.play().catch(err => console.error("Could not play audio:", err));
+        audioRef.current.play()
+          .then(() => console.log('Music started successfully'))
+          .catch(err => console.error("Could not play audio:", err));
       }
     }
   };
