@@ -977,6 +977,62 @@ const Chessboard = () => {
     );
   };
 
+  // Reference to track if meme counters have been initialized for winner overlay
+  const winnerMemeCountersInitialized = useRef(false);
+  
+  // Initialize meme counters for winner display when game status changes
+  useEffect(() => {
+    if (gameStatus !== 'active' && !winnerMemeCountersInitialized.current) {
+      // Determine the losing team color
+      const losingTeam = winner === 'red' ? 'blue' : 'red';
+      
+      // Get all pieces from the losing team
+      const losingTeamPieces = [];
+      
+      // Add standard pieces from the losing team
+      const piecesData = losingTeam === 'red' ? PIECE_MAPPINGS.RED : PIECE_MAPPINGS.BLUE;
+      
+      // Collect all losing team pieces
+      Object.entries(piecesData).forEach(([pieceType, pieces]) => {
+        pieces.forEach(piece => {
+          losingTeamPieces.push({
+            name: piece.name,
+            color: losingTeam,
+            type: pieceType
+          });
+        });
+      });
+      
+      // Get unique pieces and the king
+      const losingKing = losingTeamPieces.find(piece => piece.type === 'k');
+      const uniquePieces = Array.from(new Set(losingTeamPieces.map(piece => piece.name)))
+        .map(name => losingTeamPieces.find(piece => piece.name === name));
+      
+      // Initialize counters for all unique pieces at once
+      const newCounters = {};
+      uniquePieces.forEach(piece => {
+        newCounters[piece.name] = Math.floor(Math.random() * 3) + 1;
+      });
+      
+      // Initialize counter for king separately if needed
+      if (losingKing) {
+        newCounters[losingKing.name] = Math.floor(Math.random() * 3) + 1;
+      }
+      
+      setMemeCounter(prev => ({
+        ...prev,
+        ...newCounters
+      }));
+      
+      winnerMemeCountersInitialized.current = true;
+    }
+    
+    // Reset the initialized flag when game is reset
+    if (gameStatus === 'active') {
+      winnerMemeCountersInitialized.current = false;
+    }
+  }, [gameStatus, winner]);
+
   // Render winner overlay
   const renderWinnerOverlay = () => {
     if (gameStatus === 'active') return null;
@@ -1009,31 +1065,21 @@ const Chessboard = () => {
     // Find the king piece (type 'k') in the losing team
     const losingKing = losingTeamPieces.find(piece => piece.type === 'k');
     
-    // Make sure the meme counter is initialized for the king
-    if (losingKing && !memeCounter[losingKing.name]) {
-      setMemeCounter(prev => ({
-        ...prev,
-        [losingKing.name]: Math.floor(Math.random() * 3) + 1
-      }));
-    }
-    
     // Generate falling pieces images
     const fallingPieces = [];
     
-    // Generate 15 random falling pieces from the losing team
-    for (let i = 0; i < 15; i++) {
-      // Randomly select a piece from the losing team
-      const randomIndex = Math.floor(Math.random() * losingTeamPieces.length);
-      const piece = losingTeamPieces[randomIndex];
-      
-      // Make sure the meme counter is initialized for this piece
-      if (!memeCounter[piece.name]) {
-        setMemeCounter(prev => ({
-          ...prev,
-          [piece.name]: Math.floor(Math.random() * 3) + 1 // Random meme (1-3)
-        }));
-      }
-      
+    // Get unique pieces from the losing team (ensure each character appears only once)
+    const uniquePieces = Array.from(new Set(losingTeamPieces.map(piece => piece.name)))
+      .map(name => losingTeamPieces.find(piece => piece.name === name));
+    
+    // Shuffle the unique pieces array to randomize the order
+    const shuffledPieces = [...uniquePieces].sort(() => Math.random() - 0.5);
+    
+    // Use all unique pieces for falling images (or up to 15 if there are more)
+    const piecesToUse = shuffledPieces.slice(0, Math.min(15, shuffledPieces.length));
+    
+    // Create a falling piece for each unique piece
+    piecesToUse.forEach((piece, i) => {
       // Generate random position and animation properties
       const leftPos = Math.random() * 90 + 5; // 5% to 95% of the screen width
       const delay = Math.random() * 10; // 0 to 10s delay
@@ -1062,7 +1108,7 @@ const Chessboard = () => {
           />
         </div>
       );
-    }
+    });
     
     return (
       <div className="winner-overlay">
