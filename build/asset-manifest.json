@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/PoliticalCHESS-MEME-edition-/static/css/main.324d3f6c.css",
-    "main.js": "/PoliticalCHESS-MEME-edition-/static/js/main.2e85d0f5.js",
+    "main.js": "/PoliticalCHESS-MEME-edition-/static/js/main.5f26afc5.js",
     "static/media/baloo.X.jpg": "/PoliticalCHESS-MEME-edition-/static/media/baloo.X.21e5d1f6abc92578adf9.jpg",
     "index.html": "/PoliticalCHESS-MEME-edition-/index.html",
     "main.324d3f6c.css.map": "/PoliticalCHESS-MEME-edition-/static/css/main.324d3f6c.css.map",
-    "main.2e85d0f5.js.map": "/PoliticalCHESS-MEME-edition-/static/js/main.2e85d0f5.js.map"
+    "main.5f26afc5.js.map": "/PoliticalCHESS-MEME-edition-/static/js/main.5f26afc5.js.map"
   },
   "entrypoints": [
     "static/css/main.324d3f6c.css",
-    "static/js/main.2e85d0f5.js"
+    "static/js/main.5f26afc5.js"
   ]
 }
