@@ -1235,11 +1235,15 @@ const Chessboard = () => {
   const changeMusic = (musicType) => {
     setCurrentMusic(musicType);
     if (audioRef.current) {
-      const musicPath = `${process.env.PUBLIC_URL}/assets/audio/${musicType === 'lofi' ? 'politcal party lofi.mp3' : 'degen.mp3'}`;
+      const musicFileName = musicType === 'lofi' ? 'politcal party lofi.mp3' : 'Degen.mp3';
+      const musicPath = process.env.NODE_ENV === 'production' 
+        ? `${process.env.PUBLIC_URL}/assets/audio/${musicFileName}`
+        : `/assets/audio/${musicFileName}`;
+      
       audioRef.current.src = musicPath;
       audioRef.current.load();
       if (!isMuted) {
-        audioRef.current.play().catch(err => console.log("Could not play audio:", err));
+        audioRef.current.play().catch(err => console.error("Could not play audio:", err));
       }
     }
   };
@@ -1249,7 +1253,9 @@ const Chessboard = () => {
       {/* Background audio player */}
       <audio
         ref={audioRef}
-        src={`${process.env.PUBLIC_URL}/assets/audio/${currentMusic === 'lofi' ? 'politcal party lofi.mp3' : 'degen.mp3'}`}
+        src={`${process.env.NODE_ENV === 'production' 
+          ? `${process.env.PUBLIC_URL}/assets/audio/${currentMusic === 'lofi' ? 'politcal party lofi.mp3' : 'Degen.mp3'}`
+          : `/assets/audio/${currentMusic === 'lofi' ? 'politcal party lofi.mp3' : 'Degen.mp3'}`}`}
         loop
         autoPlay
         preload="auto"
