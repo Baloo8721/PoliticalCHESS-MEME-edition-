@@ -8,7 +8,7 @@ const PLAYER_IMAGE_MAPPINGS = {
   'Ted Cruz': 'cruz',
   'Elon Musk': 'elon',
   'Ron DeSantis': 'desantis',
-  'Rand Paul': 'rand',
+  'JD Vance': 'vance',
   'Kash Patel': 'patel',
   'Pam Bondi': 'bondi',
   'Donald Trump': 'trump',
@@ -52,7 +52,7 @@ const PIECE_MAPPINGS = {
       { name: 'Ron DeSantis', position: 'g1' }
     ],
     b: [
-      { name: 'Rand Paul', position: 'c1' },
+      { name: 'JD Vance', position: 'c1' }, // Updated from Rand Paul
       { name: 'Kash Patel', position: 'f1' }
     ],
     q: [{ name: 'Pam Bondi', position: 'd1' }],
@@ -96,6 +96,21 @@ const PIECE_MAPPINGS = {
   }
 };
 
+// Meme mappings
+const MEME_MAPPINGS = {
+  'JD Vance': [
+    `${process.env.PUBLIC_URL}/assets/memes/red/vance_meme.jpg`,
+    `${process.env.PUBLIC_URL}/assets/memes/red/vance_meme2.jpg`,
+    `${process.env.PUBLIC_URL}/assets/memes/red/vance_meme3.jpg`
+  ],
+  'Vivek Ramaswamy': [
+    `${process.env.PUBLIC_URL}/assets/memes/red/vivek_meme.jpg`,
+    `${process.env.PUBLIC_URL}/assets/memes/red/vivek_meme2.jpg`,
+    `${process.env.PUBLIC_URL}/assets/memes/red/vivek_meme3.jpg`
+  ],
+  // ... rest of the meme mappings remain the same
+};
+
 const Chessboard = () => {
   // Board representation: 8x8 2D array
   const [board, setBoard] = useState([]);
@@ -134,7 +149,7 @@ const Chessboard = () => {
     // Back row
     newBoard[0][0] = { type: 'r', color: 'red', name: 'Vivek Ramaswamy' };
     newBoard[0][1] = { type: 'n', color: 'red', name: 'Elon Musk' };
-    newBoard[0][2] = { type: 'b', color: 'red', name: 'Rand Paul' };
+    newBoard[0][2] = { type: 'b', color: 'red', name: 'JD Vance' }; // Updated from Rand Paul
     newBoard[0][3] = { type: 'q', color: 'red', name: 'Pam Bondi' };
     newBoard[0][4] = { type: 'k', color: 'red', name: 'Donald Trump' };
     newBoard[0][5] = { type: 'b', color: 'red', name: 'Kash Patel' };
@@ -638,6 +653,10 @@ const Chessboard = () => {
       audioRef.current.muted = isMuted;
       audioRef.current.preload = "auto";
 
+      // Set initial music to Lofi
+      audioRef.current.src = `${process.env.PUBLIC_URL}/assets/audio/politcal party lofi.mp3`;
+      audioRef.current.load();
+
       // Try to play automatically
       const playAudio = () => {
         audioRef.current.play()
@@ -675,6 +694,36 @@ const Chessboard = () => {
       document.removeEventListener('keydown', () => { });
     };
   }, []);
+
+  const changeMusic = (musicType) => {
+    if (audioRef.current) {
+      // Stop the current audio completely
+      audioRef.current.pause();
+      
+      // Determine the new music file
+      const musicFileName = musicType === 'lofi' ? 'politcal party lofi.mp3' : 'Degen.mp3';
+      const musicPath = `${process.env.PUBLIC_URL}/assets/audio/${musicFileName}`;
+
+      // Set new source and reset
+      audioRef.current.src = musicPath;
+      
+      // Play immediately if not muted
+      if (!isMuted) {
+        audioRef.current.play()
+          .then(() => {
+            console.log(`Switched to ${musicType} music successfully`);
+            setCurrentMusic(musicType);
+          })
+          .catch(err => {
+            console.error('Error playing new track:', err);
+            setCurrentMusic(musicType);
+          });
+      } else {
+        // Update music type even if muted
+        setCurrentMusic(musicType);
+      }
+    }
+  };
 
   // Update audio volume and mute state when changed
   useEffect(() => {
@@ -1231,27 +1280,101 @@ const Chessboard = () => {
     );
   };
 
-  // Add function to handle music change
-  const changeMusic = (musicType) => {
-    setCurrentMusic(musicType);
-    if (audioRef.current) {
-      const musicFileName = musicType === 'lofi' 
-        ? 'politcal party lofi.mp3' 
-        : 'Degen.mp3';
-      
-      const musicPath = `${process.env.PUBLIC_URL}/assets/audio/${musicFileName}`;
-      
-      console.log('Changing music:', musicType, 'Path:', musicPath);
-      
-      audioRef.current.src = musicPath;
-      audioRef.current.load();
-      
-      if (!isMuted) {
-        audioRef.current.play()
-          .then(() => console.log('Music started successfully'))
-          .catch(err => console.error("Could not play audio:", err));
-      }
-    }
+  // Function to copy address to clipboard
+  const copyToClipboard = (address) => {
+    navigator.clipboard.writeText(address).then(() => {
+      alert('Address copied to clipboard!');
+    }).catch(err => {
+      console.error('Failed to copy: ', err);
+    });
+  };
+
+  // Render donation section
+  const DonationSection = () => {
+    const btcAddress = 'bc1qmm5dv9sk8ddy53frkmf3nkkk7tyj6c72jraqc7';
+    const ethAddress = '0x3880dF4eF0096a96751D06cEA97c79855014F16A';
+    const venmoLink = 'https://account.venmo.com/u/Baloo_X';
+    const dogeAddress = 'D9ytJWFzzvx85gvauZjqMBYRhmfuSxdKAc';
+
+    return (
+      <div className="donation-section">
+        <h4>Donate & Help Support</h4>
+        <p className="donation-message">
+          Your tips/donations are extremely appreciated for a poor dev! <b className="white-follow-text">Give me a Follow</b> instead if you can't donate! I still Love ya! More to come!
+        </p>
+        <div className="crypto-donation">
+          <div className="crypto-item">
+            <span className="crypto-symbol">BTC</span>
+            <span className="crypto-address">{btcAddress}</span>
+            <button
+              className="copy-address-btn"
+              onClick={() => copyToClipboard(btcAddress)}
+            >
+              COPY
+            </button>
+          </div>
+          <div className="crypto-item">
+            <span className="crypto-symbol">ETH</span>
+            <span className="crypto-address">{ethAddress}</span>
+            <button
+              className="copy-address-btn"
+              onClick={() => copyToClipboard(ethAddress)}
+            >
+              COPY
+            </button>
+          </div>
+          <div className="crypto-item">
+            <span className="crypto-symbol">DOGE</span>
+            <span className="crypto-address">{dogeAddress}</span>
+            <button
+              className="copy-address-btn"
+              onClick={() => copyToClipboard(dogeAddress)}
+            >
+              COPY
+            </button>
+          </div>
+          <div className="venmo-item">
+            <a
+              href={venmoLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="coffee-image-link"
+            >
+              <div className="coffee-image-container">
+                <img 
+                  src={`${process.env.PUBLIC_URL}/assets/winner/coffee.jpg`} 
+                  alt="Buy me a coffee" 
+                  className="coffee-image"
+                />
+              </div>
+            </a>
+            <a
+              href={venmoLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="venmo-link"
+            >
+              Venmo: @Baloo_X
+            </a>
+          </div>
+          <div className="follow-item">
+            <a
+              href="https://x.com/Baloo8721"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="venmo-link"
+            >
+              <span>Follow Me</span>
+              <img
+                src={`${process.env.PUBLIC_URL}/assets/memes/x/baloo.X.jpg`}
+                alt="X Logo"
+                className="x-follow-logo"
+              />
+            </a>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -1259,7 +1382,7 @@ const Chessboard = () => {
       {/* Background audio player */}
       <audio
         ref={audioRef}
-        src={`${process.env.NODE_ENV === 'production' 
+        src={`${process.env.NODE_ENV === 'production'
           ? `${process.env.PUBLIC_URL}/assets/audio/${currentMusic === 'lofi' ? 'politcal party lofi.mp3' : 'Degen.mp3'}`
           : `/assets/audio/${currentMusic === 'lofi' ? 'politcal party lofi.mp3' : 'Degen.mp3'}`}`}
         loop
@@ -1323,7 +1446,6 @@ const Chessboard = () => {
           </div>
           <div className="follow-support">
             <span className="follow-text">Follow Me</span>
-            <span className="support-text">Support</span>
           </div>
           <a
             href="https://x.com/Baloo8721"
@@ -1362,6 +1484,10 @@ const Chessboard = () => {
               </button>
             </div>
           )}
+        </div>
+        <DonationSection />
+        <div className="satire-warning">
+          Warning: This game is a lighthearted satire poking fun at politicians. It's all in good fun—don't take it too seriously!
         </div>
       </div>
     </div>

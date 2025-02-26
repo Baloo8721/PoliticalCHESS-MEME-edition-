@@ -2,6 +2,10 @@
 
 A political-themed chess game featuring US political figures as chess pieces. Play chess with a twist, where Republican (Red) and Democrat (Blue) figures face off in a classic game of strategy, with memes displayed when capturing pieces!
 
+## Disclaimer
+
+Warning: This game is a lighthearted satire poking fun at politicians. It's all in good fun—don't take it too seriously!
+
 ## Features
 
 - Standard chess rules with political figures as pieces

@@ -14,7 +14,7 @@
   --dark-border-color: #444444;
   --dark-highlight: rgba(187, 134, 252, 0.7);
   --dark-legal-move: rgba(3, 218, 198, 0.6);
-  --dark-red-color: #ff5555;
+  --dark-red-color: #cc4444; /* Slightly darker red */
   /* Republican/Red team color */
   --dark-blue-color: #5555ff;
   /* Democrat/Blue team color */
@@ -217,6 +217,7 @@ body {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
+  overflow: hidden; /* Prevent any potential content overflow */
 }
 
 .light {
@@ -229,7 +230,9 @@ body {
 
 /* Piece styling */
 .piece {
-  position: relative;
+  position: absolute; /* Ensure piece is centered and doesn't cause layout shifts */
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   display: flex;
@@ -241,10 +244,13 @@ body {
 .piece-img {
   width: 80.5%;
   height: 80.5%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   display: block;
   margin: 0 auto;
   filter: brightness(1.1) contrast(1.1);
+  will-change: transform; /* Hint to browser for potential optimization */
 }
 
 .piece-name {
@@ -606,14 +612,17 @@ body {
 
 .turn-info .team-name {
   font-weight: bold;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
 }
 
 .turn-info .team-name.red {
-  color: var(--red-color);
+  background-color: var(--red-color);
 }
 
 .turn-info .team-name.blue {
-  color: var(--blue-color);
+  background-color: var(--blue-color);
 }
 
 .game-controls {
@@ -732,6 +741,11 @@ body {
   order: 1;
 }
 
+.white-follow-text {
+  color: white;
+  font-weight: bold;
+}
+
 .x-button {
   display: flex;
   align-items: center;
@@ -767,28 +781,6 @@ body {
   opacity: 1;
 }
 
-/* Make audio controls more compact on mobile */
-@media (max-width: 480px) {
-  .audio-controls {
-    padding: 5px 10px;
-  }
-
-  .music-text {
-    font-size: 12px;
-    margin-right: 8px;
-  }
-
-  .music-choice {
-    padding: 3px 6px;
-    font-size: 11px;
-  }
-
-  .x-button {
-    font-size: 16px;
-    padding: 3px 6px;
-  }
-}
-
 /* Captured Piece Popup Styles */
 .captured-popup-overlay {
   position: fixed;
@@ -802,7 +794,7 @@ body {
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  /* Very high z-index to ensure it's on top of all elements */
+  /* Very high z-index to ensure it's on top of all other elements */
   cursor: pointer;
 }
 
@@ -898,11 +890,11 @@ body {
 
 .capturing-piece-image,
 .captured-popup-image {
-  width: 100px;
-  height: 100px;
+  width: 170px;
+  height: 170px;
   object-fit: contain;
   border-radius: 5px;
-  margin-bottom: 5px;
+  margin-bottom: 10px;
 }
 
 @media (min-width: 768px) {
@@ -917,8 +909,8 @@ body {
 
   .capturing-piece-image,
   .captured-popup-image {
-    width: 150px;
-    height: 150px;
+    width: 200px;
+    height: 200px;
   }
 
   .captured-vs {
@@ -1203,13 +1195,216 @@ body {
 }
 
 .support-text {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 12px;
-  font-weight: normal;
-  text-align: center;
-  display: block;
+  display: none;
 }
 
-.light-theme .support-text {
-  color: rgba(0, 0, 0, 0.7); /* Dark black with slight transparency */
+/* Donation Section Styles */
+.donation-section {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.donation-section h4 {
+  margin-bottom: 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.crypto-donation {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.crypto-item, .venmo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.crypto-symbol {
+  font-weight: bold;
+  width: 40px;
+}
+
+.crypto-address {
+  font-size: 10px;
+  flex-grow: 1;
+  word-break: break-all;
+  min-width: 0;
+}
+
+.copy-address-btn {
+  background: none;
+  border: 1px solid var(--text-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+  flex-shrink: 0;
+}
+
+.copy-address-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.venmo-link {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 0;
+  margin-bottom: 40px; /* Increased to create more space */
+  text-align: center;
+  display: block;
+  width: 100%;
+}
+
+.venmo-link:hover {
+  text-decoration: underline;
+}
+
+.donation-message {
+  font-size: 13px;
+  text-align: center;
+  margin-bottom: 10px;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.crypto-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.crypto-symbol {
+  font-weight: bold;
+  width: 40px;
+  flex-shrink: 0;
+}
+
+.crypto-address {
+  font-size: 10px;
+  flex-grow: 1;
+  word-break: break-all;
+  min-width: 0;
+}
+
+.copy-address-btn {
+  background: none;
+  border: 1px solid var(--text-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+  flex-shrink: 0;
+}
+
+.copy-address-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.venmo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  margin-top: 0;
+}
+
+.coffee-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 6px;
+  margin-bottom: 0;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 6px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.coffee-image {
+  max-width: 45px;
+  max-height: 45px;
+  border-radius: 6px;
+  object-fit: contain;
+  box-shadow: 0 3px 4px rgba(0,0,0,0.1);
+}
+
+.coffee-image-link {
+  cursor: pointer;
+  display: block;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.coffee-image-link:hover .coffee-image {
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.follow-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  text-align: center;
+}
+
+.follow-item a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+}
+
+.x-follow-logo {
+  width: 100px; /* Increased from 71px by 40% */
+  height: 100px; /* Increased from 71px by 40% */
+  border-radius: 50%;
+  object-fit: cover;
+  margin-top: 10px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  .donation-section {
+    border: 2px solid #bb86fc;
+    box-shadow: 0 0 10px rgba(187, 134, 252, 0.5), 
+                0 0 20px rgba(187, 134, 252, 0.3);
+    border-radius: 12px;
+    padding: 25px 15px 5px 15px; /* Increased top padding from 15px to 25px */
+    margin: 40px 0 0 0; /* Increased top margin from 10px to 40px */
+  }
+  
+  .donation-section h4 {
+    margin-top: 0; /* Ensure the heading doesn't add extra space */
+  }
+}
+
+.satire-warning {
+  color: white;
+  text-align: center;
+  font-size: 12px;
+  font-style: italic;
+  opacity: 0.7;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  padding: 0 15px;
 }
