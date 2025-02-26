@@ -14,6 +14,8 @@
   --dark-border-color: #444444;
   --dark-highlight: rgba(187, 134, 252, 0.7);
   --dark-legal-move: rgba(3, 218, 198, 0.6);
+  --dark-red-color: #ff5555;  /* Republican/Red team color */
+  --dark-blue-color: #5555ff; /* Democrat/Blue team color */
   
   /* Light theme variables */
   --light-bg: #f5f5f5;
@@ -29,6 +31,8 @@
   --light-border-color: #cccccc;
   --light-highlight: rgba(98, 0, 238, 0.5);
   --light-legal-move: rgba(3, 169, 244, 0.5);
+  --light-red-color: #ef4444;  /* Republican/Red team color in light mode */
+  --light-blue-color: #3b82f6; /* Democrat/Blue team color in light mode */
   
   /* Default theme (dark) */
   --bg: var(--dark-bg);
@@ -44,6 +48,8 @@
   --border-color: var(--dark-border-color);
   --highlight: var(--dark-highlight);
   --legal-move: var(--dark-legal-move);
+  --red-color: var(--dark-red-color);
+  --blue-color: var(--dark-blue-color);
 }
 
 /* Light theme class */
@@ -61,6 +67,8 @@
   --border-color: var(--light-border-color);
   --highlight: var(--light-highlight);
   --legal-move: var(--light-legal-move);
+  --red-color: var(--light-red-color);
+  --blue-color: var(--light-blue-color);
 }
 
 body {
@@ -305,6 +313,7 @@ body {
   justify-content: center;
   align-items: center;
   z-index: 10;
+  overflow: hidden; /* Keep falling pieces within the overlay */
 }
 
 .winner-content {
@@ -320,13 +329,24 @@ body {
 }
 
 .winner-trophy {
-  width: 150px;
+  width: 200px;
   height: auto;
-  margin-bottom: 15px;
-  border-radius: 5px;
-  border: 2px solid gold;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  border: 3px solid gold;
+  object-fit: cover;
   box-shadow: 0 0 15px gold;
   animation: glow 2s infinite alternate;
+  filter: contrast(110%) brightness(105%);
+}
+
+.winner-king-meme {
+  width: 200px;
+  height: auto;
+  margin: 20px 0;
+  border: 3px solid #333;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.5);
 }
 
 .winner-content h2 {
@@ -367,6 +387,44 @@ body {
   
   .winner-content h2 {
     font-size: 2.5rem;
+  }
+}
+
+/* Falling pieces animation */
+.falling-piece {
+  position: absolute;
+  top: -120px; /* Start above the screen */
+  border-radius: 8px;
+  background-color: white;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  animation-name: fall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  z-index: 5;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center;
+  border: 3px solid white;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
+}
+
+.falling-piece img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+@keyframes fall {
+  0% {
+    top: -120px;
+    transform: rotate(var(--start-rotation, 0deg));
+  }
+  100% {
+    top: 100%;
+    transform: rotate(var(--end-rotation, 360deg));
   }
 }
 
@@ -656,20 +714,122 @@ body {
 
 .captured-popup-content {
   background-color: var(--surface-1);
-  padding: 15px;
-  border-radius: 10px;
+  padding: 20px;
+  border-radius: 12px;
   text-align: center;
   max-width: 90%;
   overflow: hidden;
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.7), 0 0 15px var(--accent-color);
   animation: popup-animation 0.4s ease-in-out;
-  border: 2px solid var(--border-color);
+  border: 3px solid var(--accent-color);
+}
+
+.captured-popup-header h2 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: var(--accent-color);
+  font-size: 28px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  letter-spacing: 2px;
+  font-weight: 800;
+}
+
+.captured-popup-name {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: var(--accent-color);
+}
+
+.captured-popup-instruction {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 15px;
+  font-style: italic;
+  animation: pulse 2s infinite;
+}
+
+.captured-vs {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin: 0 10px;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+.piece-label {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-top: 5px;
+}
+
+@media (min-width: 768px) {
+  .captured-popup-name {
+    font-size: 22px;
+  }
+  
+  .captured-popup-instruction {
+    font-size: 16px;
+  }
+}
+
+.captured-popup-images {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.capturing-piece, .captured-piece {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px;
+  border-radius: 5px;
+  border: 2px solid transparent;
+}
+
+.red-color {
+  border-color: var(--red-color);
+  background-color: rgba(255, 85, 85, 0.1);
+}
+
+.blue-color {
+  border-color: var(--blue-color);
+  background-color: rgba(85, 85, 255, 0.1);
+}
+
+.capturing-piece-image, .captured-popup-image {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  border-radius: 5px;
+  margin-bottom: 5px;
 }
 
 @media (min-width: 768px) {
   .captured-popup-content {
     padding: 20px;
-    max-width: 60%;
+    max-width: 80%;
+  }
+  
+  .captured-popup-header h2 {
+    font-size: 28px;
+  }
+  
+  .capturing-piece-image, .captured-popup-image {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .captured-vs {
+    font-size: 24px;
+  }
+  
+  .piece-label {
+    font-size: 16px;
   }
 }
 
@@ -687,35 +847,10 @@ body {
   }
 }
 
-.captured-popup-image {
-  max-width: 90%;
-  max-height: 50vh;
-  object-fit: contain;
-  border-radius: 5px;
-  margin-bottom: 10px;
-}
-
-.captured-popup-name {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 5px;
-  color: var(--accent-color);
-}
-
-.captured-popup-instruction {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin-top: 10px;
-}
-
-@media (min-width: 768px) {
-  .captured-popup-name {
-    font-size: 22px;
-  }
-  
-  .captured-popup-instruction {
-    font-size: 16px;
-  }
+@keyframes pulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
 }
 
 /* Game mode controls */
@@ -723,60 +858,85 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 15px;
-  padding: 10px;
-  border-radius: 5px;
-  background-color: var(--surface-2);
+  margin-top: 20px;
+  align-items: center;
 }
 
-.mode-toggle, .computer-color-toggle {
+.mode-toggle, .computer-color-toggle, .difficulty-toggle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
+  gap: 10px;
 }
 
 .mode-label {
-  font-size: 14px;
-  color: var(--text-primary);
-  margin-right: 10px;
+  font-weight: bold;
+  min-width: 110px;
 }
 
 .mode-button, .color-button {
-  padding: 8px 12px;
-  border-radius: 4px;
-  background-color: var(--surface-1);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
+  border: none;
+  border-radius: 5px;
+  padding: 6px 12px;
+  font-weight: bold;
   cursor: pointer;
-  transition: all 0.2s;
-  font-size: 14px;
-  flex-grow: 1;
-  text-align: center;
+  transition: all 0.3s ease;
+  background-color: #2a2a2a;
+  color: white;
+  min-width: 100px;
 }
 
 .mode-button:hover, .color-button:hover {
-  background-color: var(--surface-2);
+  background-color: #3a3a3a;
 }
 
 .mode-button.active {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 5px var(--accent-color);
+  background-color: #4a4a4a;
+  box-shadow: 0 0 10px rgba(255,255,255,0.3);
+}
+
+.difficulty-toggle {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.difficulty-button {
+  min-width: 80px;
+  font-size: 0.9em;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  padding: 6px 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #2a2a2a;
+  color: white;
+}
+
+.difficulty-button:hover {
+  background-color: #3a3a3a;
+}
+
+.difficulty-button.active {
+  background-color: #3a5a9a;
+  border: 2px solid #fff;
+  box-shadow: 0 0 10px rgba(255,255,255,0.5);
 }
 
 .color-button.red-button {
-  border-color: #ff5555;
-  color: #ff5555;
+  background-color: #8b2323;
 }
 
 .color-button.blue-button {
-  border-color: #5555ff;
-  color: #5555ff;
+  background-color: #236b8b;
 }
 
-.mode-button:disabled, .color-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.color-button.red-button:hover {
+  background-color: #9b3333;
+}
+
+.color-button.blue-button:hover {
+  background-color: #337b9b;
 }
 
 /* Make the controls more compact on mobile */
@@ -789,4 +949,130 @@ body {
     padding: 6px 8px;
     font-size: 12px;
   }
+}
+
+/* Team Selection Popup */
+.team-selection-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.team-selection-content {
+  background-color: #222;
+  border-radius: 10px;
+  padding: 30px;
+  width: 80%;
+  max-width: 600px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  border: 2px solid #444;
+}
+
+.team-selection-content h2 {
+  font-size: 2rem;
+  margin-bottom: 30px;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.team-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.team-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  width: 45%;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.team-icon {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+.team-name {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.team-color {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.team-vs {
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  margin: 0 10px;
+}
+
+.republican-button {
+  background-color: #800000;
+}
+
+.democrat-button {
+  background-color: #000080;
+}
+
+.republican-button:hover {
+  background-color: #a00000;
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+}
+
+.democrat-button:hover {
+  background-color: #0000a0;
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(0, 0, 255, 0.5);
+}
+
+.difficulty-selection h3 {
+  margin-bottom: 15px;
+  color: #ddd;
+}
+
+.difficulty-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.difficulty-select-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  background-color: #333;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.difficulty-select-button:hover {
+  background-color: #444;
+}
+
+.difficulty-select-button.active {
+  background-color: #3a5a9a;
+  border: 2px solid #fff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }

@@ -107,13 +107,15 @@ const Chessboard = () => {
   const [winner, setWinner] = useState(null); // null, 'red', or 'blue'
   const [hoveredPiece, setHoveredPiece] = useState(null); // To track which piece is being hovered
   const [capturedPiecePopup, setCapturedPiecePopup] = useState(null); // To show popup when piece is captured
+  const [capturingPiece, setCapturingPiece] = useState(null); // To track which piece did the capturing
   const [hoveredCapturedPiece, setHoveredCapturedPiece] = useState(null); // To track hovered captured piece for meme
   const [memeCounter, setMemeCounter] = useState({}); // To track which meme version to show for each piece
   const [isDarkTheme, setIsDarkTheme] = useState(true); // New state for theme tracking
-  const [volume, setVolume] = useState(0.5); // Volume state (0 to 1)
+  const [volume, setVolume] = useState(0.25); // Volume state (0 to 1) - starts at 25%
   const [isMuted, setIsMuted] = useState(false); // Mute state
-  const [gameMode, setGameMode] = useState('human'); // 'human' or 'computer'
+  const [gameMode, setGameMode] = useState('computer'); // Default to 'computer' mode (Player vs Bot)
   const [computerColor, setComputerColor] = useState('blue'); // Computer plays as blue by default
+  const [showTeamSelection, setShowTeamSelection] = useState(true); // Show team selection popup by default
   
   // Audio ref for background music
   const audioRef = useRef(null);
@@ -176,6 +178,7 @@ const Chessboard = () => {
     setLegalMoves([]);
     setTurn('red');
     setCapturedPieces({ red: [], blue: [] });
+    setCapturingPiece(null);
   };
   
   // Is position valid on the board?
@@ -347,30 +350,63 @@ const Chessboard = () => {
     initializeBoard();
     setSelectedPiece(null);
     setLegalMoves([]);
-    setCapturedPieces(() => ({ red: [], blue: [] }));
-    setTurn('red');
+    setCapturedPieces({ red: [], blue: [] });
+    setTurn('red'); // Always start with red
     setWinner(null);
     setGameStatus('active');
     setCapturedPiecePopup(null);
     setMemeCounter({});
+    setCapturingPiece(null); // Reset capturing piece
     
     // If computer plays as red, trigger its move after a short delay
-    if (gameMode === 'computer' && computerColor === 'red') {
+    if (gameMode === 'computer' && computerColor === 'red' && !showTeamSelection) {
       setTimeout(() => {
-        // The game needs to be fully initialized before we make a computer move
         makeComputerMove();
       }, 1000);
     }
   };
   
+  // Start a completely new game (reset game and show team selection)
+  const newGame = () => {
+    setShowTeamSelection(true); // Show team selection popup
+    setGameMode('computer'); // Default to Player vs Bot mode
+    initializeBoard();
+    setSelectedPiece(null);
+    setLegalMoves([]);
+    setCapturedPieces({ red: [], blue: [] });
+    setTurn('red');
+    setWinner(null);
+    setGameStatus('active');
+    setCapturedPiecePopup(null);
+    setMemeCounter({});
+    setCapturingPiece(null); // Reset capturing piece
+  };
+
   // Handle square click
   const handleSquareClick = (row, col) => {
+    // Play audio on first user interaction (if not already playing)
+    ensureAudioPlaying();
+    
     // Don't allow moves if game is over
     if (gameStatus !== 'active') return;
 
     // If the capture popup is showing, clicking anywhere should dismiss it
     if (capturedPiecePopup) {
-      setCapturedPiecePopup(null);
+      // Cycle to next meme for this piece before dismissing
+      if (capturedPiecePopup && capturedPiecePopup.name) {
+        cycleToNextMeme(capturedPiecePopup.name);
+      }
+      
+      // Dismiss popup and switch turns
+      const dismissPopup = () => {
+        setCapturedPiecePopup(null);
+        setCapturingPiece(null);
+        setTurn(turn === 'red' ? 'blue' : 'red');
+        document.removeEventListener('click', dismissPopup);
+        document.removeEventListener('touchstart', dismissPopup);
+        document.removeEventListener('keydown', dismissPopup);
+      };
+      dismissPopup();
       return;
     }
 
@@ -397,37 +433,44 @@ const Chessboard = () => {
           kingCaptured = checkForWin(capturedPiece);
         }
         
-        // Move the piece
+        // Save the capturing piece before we move it
+        const capturingPiece = newBoard[selectedRow][selectedCol];
+        
+        // Move piece
         newBoard[row][col] = newBoard[selectedRow][selectedCol];
         newBoard[selectedRow][selectedCol] = null;
         
         // Update board
         setBoard(newBoard);
         
-        // Show captured piece popup if there was a capture and the game isn't over
-        if (capturedPiece && !kingCaptured) {
-          showCapturedPiecePopup(capturedPiece);
+        // If a piece is captured, add it to captured pieces and show popup
+        if (capturedPiece) {
+          // Update captured pieces with the structure { red: [], blue: [] }
+          const newCapturedPieces = { ...capturedPieces };
+          newCapturedPieces[turn].push(capturedPiece);
+          setCapturedPieces(newCapturedPieces);
           
-          // Add to captured pieces after popup is shown
-          setCapturedPieces(prev => ({
-            ...prev,
-            [turn]: [...prev[turn], capturedPiece]
-          }));
+          // Check if a king was captured (victory condition)
+          if (capturedPiece.type === 'k') {
+            setWinner(capturingPiece.color);
+            setGameStatus('checkmate');
+            return; // Don't switch turns if game is over
+          }
           
-          // Don't switch turns yet - will switch after popup is dismissed
-        } else {
-          // If no capture or game is over, handle normally
-          if (capturedPiece) {
-            setCapturedPieces(prev => ({
+          // Initialize meme counter if not exists
+          if (!memeCounter[capturedPiece.name]) {
+            setMemeCounter(prev => ({
               ...prev,
-              [turn]: [...prev[turn], capturedPiece]
+              [capturedPiece.name]: Math.floor(Math.random() * 3) + 1
             }));
           }
           
-          // Only switch turns if the game isn't over
-          if (!kingCaptured) {
-            setTurn(turn === 'red' ? 'blue' : 'red');
-          }
+          // Show captured piece popup - this will handle the turn change after dismissal
+          showCapturedPiecePopup(capturedPiece, capturingPiece);
+        } else {
+          // No capture - switch turns immediately
+          const nextTurn = turn === 'red' ? 'blue' : 'red';
+          setTurn(nextTurn);
         }
       }
       
@@ -449,21 +492,50 @@ const Chessboard = () => {
     }
   };
   
-  // Show captured piece popup
-  const showCapturedPiecePopup = (piece) => {
-    // Initialize meme counter for this piece if not exists
-    if (!memeCounter[piece.name]) {
-      setMemeCounter(prev => ({
-        ...prev,
-        [piece.name]: Math.floor(Math.random() * 3) + 1 // Start with random meme (1-3)
-      }));
+  // Play audio on any user interaction
+  const ensureAudioPlaying = () => {
+    if (audioRef.current && audioRef.current.paused) {
+      audioRef.current.play().catch(err => console.log("Could not play audio:", err));
     }
+  };
+
+  // Show captured piece popup
+  const showCapturedPiecePopup = (capturedPiece, capturingPiece) => {
+    // Set popup data
+    setCapturedPiecePopup({
+      ...capturedPiece,
+      capturingPiece
+    });
     
-    setCapturedPiecePopup(piece);
+    // Set the capturing piece for the popup
+    setCapturingPiece(capturingPiece);
+    
+    // Add a click listener to dismiss the popup
+    const dismissPopup = () => {
+      setCapturedPiecePopup(null);
+      setCapturingPiece(null);
+      // Switch turns after popup is dismissed
+      setTurn(turn === 'red' ? 'blue' : 'red');
+      document.removeEventListener('click', dismissPopup);
+      document.removeEventListener('touchstart', dismissPopup);
+      document.removeEventListener('keydown', dismissPopup);
+    };
+    
+    // Add event listeners for dismissing popup
+    setTimeout(() => {
+      document.addEventListener('click', dismissPopup);
+      document.addEventListener('touchstart', dismissPopup);
+      document.addEventListener('keydown', dismissPopup);
+    }, 500); // Short delay to prevent immediate dismissal
   };
   
   // Handle popup click
-  const handlePopupClick = () => {
+  const handlePopupClick = (e) => {
+    console.log("Popup clicked, dismissing...");
+    
+    // Try to play audio on this interaction
+    ensureAudioPlaying();
+    
     // Cycle to next meme for this piece before dismissing
     if (capturedPiecePopup && capturedPiecePopup.name) {
       cycleToNextMeme(capturedPiecePopup.name);
@@ -471,6 +543,7 @@ const Chessboard = () => {
     
     // Dismiss popup and switch turns
     setCapturedPiecePopup(null);
+    setCapturingPiece(null);
     setTurn(turn === 'red' ? 'blue' : 'red');
   };
   
@@ -508,7 +581,7 @@ const Chessboard = () => {
     if (!memeCounter[piece.name]) {
       setMemeCounter(prev => ({
         ...prev,
-        [piece.name]: 1
+        [piece.name]: Math.floor(Math.random() * 3) + 1
       }));
     }
     
@@ -555,26 +628,76 @@ const Chessboard = () => {
     }
   };
   
-  // Setup audio player
+  // Setup audio player with better autoplay approach
   useEffect(() => {
     if (audioRef.current) {
+      // Set initial volume and state
       audioRef.current.volume = volume;
       audioRef.current.loop = true;
       audioRef.current.muted = isMuted;
+      audioRef.current.preload = "auto";
       
-      // Auto-play is often blocked by browsers
-      const playPromise = audioRef.current.play();
+      // Try to play automatically
+      const playAudio = () => {
+        audioRef.current.play()
+          .then(() => console.log("Music started automatically"))
+          .catch(error => {
+            console.log("Autoplay prevented - waiting for user interaction");
+            
+            // Add global event listeners to play on first interaction
+            const startAudio = () => {
+              if (audioRef.current && audioRef.current.paused) {
+                audioRef.current.play()
+                  .then(() => console.log("Music started after user interaction"))
+                  .catch(e => console.error("Still couldn't play audio:", e));
+              }
+            };
+            
+            // Add listeners to document
+            document.addEventListener('click', startAudio, { once: true });
+            document.addEventListener('touchstart', startAudio, { once: true });
+            document.addEventListener('keydown', startAudio, { once: true });
+          });
+      };
       
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.log("Auto-play was prevented. User interaction required to play audio.");
-        });
-      }
+      // Try immediate playback
+      playAudio();
+      
+      // Try again after a short delay (sometimes helps)
+      setTimeout(playAudio, 1000);
+    }
+    
+    // Clean up event listeners when component unmounts
+    return () => {
+      document.removeEventListener('click', () => {});
+      document.removeEventListener('touchstart', () => {});
+      document.removeEventListener('keydown', () => {});
+    };
+  }, []);
+  
+  // Update audio volume and mute state when changed
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+      audioRef.current.muted = isMuted;
     }
   }, [volume, isMuted]);
 
+  // Toggle mute
+  const toggleMute = () => {
+    ensureAudioPlaying(); // Try to play audio when user interacts with audio controls
+    
+    const newMuted = !isMuted;
+    setIsMuted(newMuted);
+    if (audioRef.current) {
+      audioRef.current.muted = newMuted;
+    }
+  };
+
   // Handle volume change
   const handleVolumeChange = (e) => {
+    ensureAudioPlaying(); // Try to play audio when user interacts with audio controls
+    
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
     if (audioRef.current) {
@@ -585,23 +708,43 @@ const Chessboard = () => {
       setIsMuted(false);
     }
   };
-
-  // Toggle mute
-  const toggleMute = () => {
-    const newMuted = !isMuted;
-    setIsMuted(newMuted);
-    if (audioRef.current) {
-      audioRef.current.muted = newMuted;
+  
+  // Helper function to get positional value (for advanced AI)
+  const getPositionalValue = (row, col) => {
+    // Bonus for controlling the center
+    const centerBonus = 5 - (Math.abs(row - 3.5) + Math.abs(col - 3.5));
+    
+    // Bonus for advancement toward opponent side
+    const advancementBonus = computerColor === 'blue' 
+      ? (7 - row) * 0.1 // Blue wants to advance toward row 0
+      : row * 0.1;      // Red wants to advance toward row 7
+    
+    return centerBonus + advancementBonus;
+  };
+  
+  // Helper function to determine piece value for AI decision making
+  const getPieceValue = (pieceType) => {
+    switch (pieceType) {
+      case 'pawn': return 1;
+      case 'knight': return 3;
+      case 'bishop': return 3;
+      case 'rook': return 5;
+      case 'queen': return 9;
+      case 'king': return 100; // High value to prioritize king capture
+      default: return 0;
     }
   };
   
-  // Computer move logic
+  // Make a computer move - AI functionality
   const makeComputerMove = () => {
-    if (gameStatus !== 'active' || turn !== computerColor) return;
+    // Safety check - only move if it's computer's turn and game is active
+    if (gameStatus !== 'active' || turn !== computerColor) {
+      console.log("Not computer's turn or game not active");
+      return;
+    }
     
-    // Slight delay to make the moves feel more natural
     setTimeout(() => {
-      // Get all pieces of the computer's color
+      // Find all computer pieces
       const computerPieces = [];
       for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
@@ -612,25 +755,29 @@ const Chessboard = () => {
         }
       }
       
-      // Shuffle to add some randomness
+      // Shuffle to add some variety to the computer's moves
       computerPieces.sort(() => Math.random() - 0.5);
       
-      // Try to find a move that captures an opponent's piece
       let moveFound = false;
       
-      // First, look for capturing moves
+      // First, try to find capturing moves
       for (const { piece, row, col } of computerPieces) {
         const moves = getLegalMoves(row, col);
+        const capturingMoves = [];
         
-        // Prioritize capturing moves
-        const capturingMoves = moves.filter(([r, c]) => board[r][c] && board[r][c].color !== computerColor);
+        // Find moves that capture opponent pieces
+        for (const [toRow, toCol] of moves) {
+          if (board[toRow][toCol] && board[toRow][toCol].color !== computerColor) {
+            capturingMoves.push([toRow, toCol]);
+          }
+        }
         
         if (capturingMoves.length > 0) {
-          // Sort capturing moves by piece value (capture higher value pieces first)
+          // Sort capturing moves based on difficulty level
           capturingMoves.sort(([r1, c1], [r2, c2]) => {
             const value1 = getPieceValue(board[r1][c1].type);
             const value2 = getPieceValue(board[r2][c2].type);
-            return value2 - value1;
+            return (value2 - value1) + (Math.random() * 0.5 - 0.25);
           });
           
           // Execute the best capturing move
@@ -647,14 +794,9 @@ const Chessboard = () => {
           const moves = getLegalMoves(row, col);
           
           if (moves.length > 0) {
-            // Prioritize moves toward the opponent's side
-            moves.sort(([r1, c1], [r2, c2]) => {
-              // For blue (computer), moving toward row 0 is preferred
-              // For red (computer), moving toward row 7 is preferred
-              return computerColor === 'blue' ? r1 - r2 : r2 - r1;
-            });
-            
-            const [toRow, toCol] = moves[0];
+            // Different move selection based on difficulty
+            const randomIndex = Math.floor(Math.random() * moves.length);
+            const [toRow, toCol] = moves[randomIndex];
             handleComputerMove(row, col, toRow, toCol);
             moveFound = true;
             break;
@@ -678,67 +820,62 @@ const Chessboard = () => {
     // Create a new board with the move applied
     const newBoard = [...board];
     
-    // If a piece is captured, add it to captured pieces
-    if (targetPiece) {
-      // Update captured pieces with the structure { red: [], blue: [] }
-      const newCapturedPieces = { ...capturedPieces };
-      newCapturedPieces[targetPiece.color].push(targetPiece);
-      setCapturedPieces(newCapturedPieces);
-      
-      // Show captured piece popup
-      setCapturedPiecePopup({
-        piece: targetPiece,
-        position: { row: toRow, col: toCol }
-      });
-      
-      // Hide the popup after a delay
-      setTimeout(() => {
-        setCapturedPiecePopup(null);
-      }, 2000);
-    }
-    
     // Move piece
     newBoard[toRow][toCol] = piece;
     newBoard[fromRow][fromCol] = null;
     
-    // Check if a king was captured (victory condition)
-    if (targetPiece && targetPiece.type === 'k') {
-      setWinner(piece.color);
-      setGameStatus('checkmate');
-    }
-    
     // Update the board
     setBoard(newBoard);
     
-    // Switch turns
-    setTurn(turn === 'red' ? 'blue' : 'red');
+    // If a piece is captured, add it to captured pieces and show popup
+    if (targetPiece) {
+      // Update captured pieces with the structure { red: [], blue: [] }
+      const newCapturedPieces = { ...capturedPieces };
+      newCapturedPieces[computerColor].push(targetPiece);
+      setCapturedPieces(newCapturedPieces);
+      
+      // Check if a king was captured (victory condition)
+      if (targetPiece.type === 'k') {
+        setWinner(piece.color);
+        setGameStatus('checkmate');
+        return; // Don't switch turns if game is over
+      }
+      
+      // Initialize meme counter if not exists
+      if (!memeCounter[targetPiece.name]) {
+        setMemeCounter(prev => ({
+          ...prev,
+          [targetPiece.name]: Math.floor(Math.random() * 3) + 1
+        }));
+      }
+      
+      // Show captured piece popup - this will handle the turn change after dismissal
+      showCapturedPiecePopup(targetPiece, piece);
+    } else {
+      // No capture - switch turns immediately
+      const nextTurn = computerColor === 'red' ? 'blue' : 'red';
+      setTurn(nextTurn);
+    }
   };
 
-  // Helper function to determine piece value for AI decision making
-  const getPieceValue = (pieceType) => {
-    switch (pieceType) {
-      case 'pawn': return 1;
-      case 'knight': return 3;
-      case 'bishop': return 3;
-      case 'rook': return 5;
-      case 'queen': return 9;
-      case 'king': return 100; // High value to prioritize king capture
-      default: return 0;
-    }
-  };
-  
   // Trigger computer move after human moves
   useEffect(() => {
-    if (gameMode === 'computer' && turn === computerColor && gameStatus === 'active') {
-      makeComputerMove();
+    // Only make a move if it's computer's turn
+    if (gameMode === 'computer' && turn === computerColor && gameStatus === 'active' && !showTeamSelection) {
+      // Add a slight delay before computer's move
+      const timer = setTimeout(() => {
+        makeComputerMove();
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [turn, gameMode, computerColor, gameStatus]);
+  }, [turn, gameMode, computerColor, gameStatus, showTeamSelection]);
 
   // Toggle between human and computer opponent
   const toggleGameMode = () => {
     if (gameStatus !== 'active') {
       // Only allow changing mode when starting a new game
-      const newMode = gameMode === 'human' ? 'computer' : 'human';
+      const newMode = gameMode === 'computer' ? 'human' : 'computer';
       setGameMode(newMode);
       
       // Reset the game when changing modes
@@ -847,14 +984,102 @@ const Chessboard = () => {
     // Map color to party name
     const partyName = winner === 'red' ? 'REPUBLICANS' : 'DEMOCRATS';
     
+    // Determine the losing team color
+    const losingTeam = winner === 'red' ? 'blue' : 'red';
+    
+    // Get all pieces from the losing team's side
+    // We want to show meme images of the losing team's characters
+    const losingTeamPieces = [];
+    
+    // Add all the standard pieces from the losing team
+    const piecesData = losingTeam === 'red' ? PIECE_MAPPINGS.RED : PIECE_MAPPINGS.BLUE;
+    
+    // Loop through each piece type (p, r, n, b, q, k)
+    Object.entries(piecesData).forEach(([pieceType, pieces]) => {
+      // Loop through each piece of this type
+      pieces.forEach(piece => {
+        losingTeamPieces.push({
+          name: piece.name,
+          color: losingTeam,
+          type: pieceType
+        });
+      });
+    });
+
+    // Find the king piece (type 'k') in the losing team
+    const losingKing = losingTeamPieces.find(piece => piece.type === 'k');
+    
+    // Make sure the meme counter is initialized for the king
+    if (losingKing && !memeCounter[losingKing.name]) {
+      setMemeCounter(prev => ({
+        ...prev,
+        [losingKing.name]: Math.floor(Math.random() * 3) + 1
+      }));
+    }
+    
+    // Generate falling pieces images
+    const fallingPieces = [];
+    
+    // Generate 15 random falling pieces from the losing team
+    for (let i = 0; i < 15; i++) {
+      // Randomly select a piece from the losing team
+      const randomIndex = Math.floor(Math.random() * losingTeamPieces.length);
+      const piece = losingTeamPieces[randomIndex];
+      
+      // Make sure the meme counter is initialized for this piece
+      if (!memeCounter[piece.name]) {
+        setMemeCounter(prev => ({
+          ...prev,
+          [piece.name]: Math.floor(Math.random() * 3) + 1 // Random meme (1-3)
+        }));
+      }
+      
+      // Generate random position and animation properties
+      const leftPos = Math.random() * 90 + 5; // 5% to 95% of the screen width
+      const delay = Math.random() * 10; // 0 to 10s delay
+      const duration = Math.random() * 10 + 10; // 10s to 20s duration
+      const size = Math.random() * 48 + 72; // 72px to 120px (20% larger than before)
+      const startRotation = Math.random() * 60 - 30; // -30 to +30 degrees initial rotation
+      const rotationDirection = Math.random() > 0.5 ? '360deg' : '-360deg'; // Random rotation direction
+      
+      fallingPieces.push(
+        <div 
+          key={`falling-${i}`}
+          className="falling-piece"
+          style={{
+            left: `${leftPos}%`,
+            animationDelay: `${delay}s`,
+            animationDuration: `${duration}s`,
+            width: `${size}px`,
+            height: `${size}px`,
+            transform: `rotate(${startRotation}deg)`,
+            '--end-rotation': rotationDirection // CSS variable for rotation direction
+          }}
+        >
+          <img 
+            src={getMemeImagePath(piece)} 
+            alt={piece.name}
+          />
+        </div>
+      );
+    }
+    
     return (
       <div className="winner-overlay">
+        {fallingPieces}
         <div className="winner-content">
           <img 
             src={`${process.env.PUBLIC_URL}/assets/winner/golden_chainsaw.jpg`} 
             alt="Golden Chainsaw Trophy" 
             className="winner-trophy"
           />
+          {losingKing && (
+            <img 
+              src={getMemeImagePath(losingKing)} 
+              alt={losingKing.name} 
+              className="winner-king-meme"
+            />
+          )}
           <h2>{partyName} WIN!</h2>
           <button onClick={resetGame} className="restart-button">Restart Game</button>
         </div>
@@ -864,23 +1089,91 @@ const Chessboard = () => {
   
   // Render captured piece popup
   const renderCapturedPiecePopup = () => {
-    if (!capturedPiecePopup) return null;
+    if (!capturedPiecePopup || !capturingPiece) return null;
+    
+    console.log("Rendering popup for:", capturedPiecePopup.name);
     
     return (
       <div className="captured-popup-overlay" onClick={handlePopupClick}>
-        <div className="captured-popup-content">
-          <img 
-            src={getMemeImagePath(capturedPiecePopup)} 
-            alt={`Captured ${capturedPiecePopup.name}`} 
-            className="captured-popup-image"
-          />
-          <div className="captured-popup-name">{capturedPiecePopup.name} was captured!</div>
-          <div className="captured-popup-instruction">Click anywhere to continue</div>
+        <div className="captured-popup-content" onClick={handlePopupClick}>
+          <div className="captured-popup-header">
+            <h2>CAPTURED!</h2>
+          </div>
+          
+          <div className="captured-popup-images">
+            <div className={`capturing-piece ${capturingPiece.color}-color`}>
+              <img 
+                src={getPlayerImagePath(capturingPiece)} 
+                alt={`${capturingPiece.name}`} 
+                className="capturing-piece-image"
+              />
+              <div className="piece-label">{capturingPiece.name}</div>
+            </div>
+            
+            <div className="captured-vs">vs</div>
+            
+            <div className={`captured-piece ${capturedPiecePopup.color}-color`}>
+              <img 
+                src={getMemeImagePath(capturedPiecePopup)} 
+                alt={`${capturedPiecePopup.name}`} 
+                className="captured-popup-image"
+              />
+              <div className="piece-label">{capturedPiecePopup.name}</div>
+            </div>
+          </div>
+          
+          <div className="captured-popup-instruction">
+            Click anywhere to continue
+          </div>
         </div>
       </div>
     );
   };
-  
+
+  // Render the team selection popup at the beginning of the game
+  const renderTeamSelectionPopup = () => {
+    if (!showTeamSelection) return null;
+    
+    return (
+      <div className="team-selection-popup">
+        <div className="team-selection-content">
+          <h2>Choose Your Team</h2>
+          <div className="team-options">
+            <button
+              className="team-button republican-button"
+              onClick={() => {
+                setComputerColor('blue'); // Player plays as red (Republicans)
+                setShowTeamSelection(false);
+                setTurn('red');
+                resetGame();
+              }}
+            >
+              <div className="team-icon">🐘</div>
+              <div className="team-name">Republicans</div>
+              <div className="team-color">(Red)</div>
+            </button>
+            
+            <div className="team-vs">VS</div>
+            
+            <button
+              className="team-button democrat-button"
+              onClick={() => {
+                setComputerColor('red'); // Player plays as blue (Democrats)
+                setShowTeamSelection(false);
+                setTurn('blue');
+                resetGame();
+              }}
+            >
+              <div className="team-icon">🐴</div>
+              <div className="team-name">Democrats</div>
+              <div className="team-color">(Blue)</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="game-container">
       {/* Background audio player */}
@@ -888,21 +1181,25 @@ const Chessboard = () => {
         ref={audioRef} 
         src={`${process.env.PUBLIC_URL}/assets/audio/politcal party lofi.mp3`} 
         loop
+        autoPlay
+        preload="auto"
+        muted={isMuted}
       />
       
       <div className="chessboard">
         {board.length > 0 ? renderBoard() : <div>Loading...</div>}
         {renderWinnerOverlay()}
         {renderCapturedPiecePopup()}
+        {renderTeamSelectionPopup()}
       </div>
       <div className="captured-pieces">
         <h3>Captured Pieces</h3>
         <div className="captured-red">
-          <h4>Republicans Captured</h4>
+          <h4>Republicans Captures</h4>
           {renderCapturedPieces('red')}
         </div>
         <div className="captured-blue">
-          <h4>Democrats Captured</h4>
+          <h4>Democrats Captures</h4>
           {renderCapturedPieces('blue')}
         </div>
         <div className="turn-info">
@@ -944,24 +1241,24 @@ const Chessboard = () => {
           <div className="mode-toggle">
             <span className="mode-label">Game Mode:</span>
             <button 
-              className={`mode-button ${gameMode === 'human' ? 'active' : ''}`} 
+              className={`mode-button ${gameMode === 'computer' ? 'active' : ''}`} 
               onClick={toggleGameMode}
               disabled={gameStatus === 'active'}
             >
-              {gameMode === 'human' ? '👥 Player vs Player' : '🧠 Player vs Computer'}
+              {gameMode === 'computer' ? '🤖 Player vs Bot' : '👥 Player vs Player'}
             </button>
           </div>
           
           {/* Only show computer color toggle in computer mode */}
           {gameMode === 'computer' && (
             <div className="computer-color-toggle">
-              <span className="mode-label">Computer Plays As:</span>
+              <span className="mode-label">You Play As:</span>
               <button 
-                className={`color-button ${computerColor === 'blue' ? 'blue-button' : 'red-button'}`}
+                className={`color-button ${computerColor === 'red' ? 'blue-button' : 'red-button'}`}
                 onClick={toggleComputerColor}
                 disabled={gameStatus === 'active'}
               >
-                {computerColor === 'blue' ? 'Democrats' : 'Republicans'}
+                {computerColor === 'red' ? 'Democrats' : 'Republicans'}
               </button>
             </div>
           )}
