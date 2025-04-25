@@ -1359,7 +1359,7 @@ const Chessboard = () => {
           </div>
           <div className="follow-item">
             <a
-              href="https://x.com/Baloo8721"
+              href="https://x.com/Baloo__X"
               target="_blank"
               rel="noopener noreferrer"
               className="venmo-link"
