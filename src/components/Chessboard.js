@@ -1448,7 +1448,7 @@ const Chessboard = () => {
             <span className="follow-text">Follow Me</span>
           </div>
           <a
-            href="https://x.com/Baloo8721"
+            href="https://x.com/Baloo__X"
             target="_blank"
             rel="noopener noreferrer"
             className="x-button"
