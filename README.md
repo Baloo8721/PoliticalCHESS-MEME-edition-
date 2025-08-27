@@ -61,12 +61,12 @@ This project was created with Create React App and uses:
 
 ### Play Now
 The game is hosted on GitHub Pages and can be played directly in your browser:
-[Play Political CHESS](https://Baloo8721.github.io/PoliticalCHESS-MEME-edition-)
+[Play Political CHESS](https://Baloo__x.github.io/PoliticalCHESS-MEME-edition-)
 
 ### Sharing with Friends
 To share the game with friends, simply send them the GitHub Pages URL:
 ```
-https://Baloo8721.github.io/PoliticalCHESS-MEME-edition-
+https://Baloo__x.github.io/PoliticalCHESS-MEME-edition-
 ```
 
 ### Hosting Your Own Copy
@@ -92,6 +92,10 @@ If you want to host your own copy of the game:
 
 ## Game Modes
 
+Political CHESS offers multiple game modes to enhance your playing experience:
+
+- **🤖 Player vs Bot**: Challenge an AI opponent with adjustable difficulty
+- **🌐 Online vs Friend**: Coming soon! Compete with friends online
 - **Player vs Player (Local)**: Play against a friend on the same device
 - **Player vs Computer**: Test your skills against the AI opponent
 

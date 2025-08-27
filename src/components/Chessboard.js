@@ -111,7 +111,7 @@ const MEME_MAPPINGS = {
   // ... rest of the meme mappings remain the same
 };
 
-const Chessboard = () => {
+const Chessboard = ({ initialGameCode = null }) => {
   // Board representation: 8x8 2D array
   const [board, setBoard] = useState([]);
   const [selectedPiece, setSelectedPiece] = useState(null);
@@ -132,6 +132,19 @@ const Chessboard = () => {
   const [computerColor, setComputerColor] = useState('blue'); // Computer plays as blue by default
   const [showTeamSelection, setShowTeamSelection] = useState(true); // Show team selection popup by default
   const [currentMusic, setCurrentMusic] = useState('lofi'); // Add state for current music track
+  const [isOnlineModalOpen, setIsOnlineModalOpen] = useState(false);
+  const [gameCode, setGameCode] = useState('');
+  const [isCopied, setIsCopied] = useState(false);
+  const [gameCreator, setGameCreator] = useState(true);
+
+  useEffect(() => {
+    console.log('Chessboard mounted, initialGameCode:', initialGameCode);
+    if (initialGameCode) {
+      console.log('Joining game with code:', initialGameCode);
+      setGameMode('online');
+      setGameCreator(false); // Receiver joins, not creator
+    }
+  }, [initialGameCode]);
 
   // Audio ref for background music
   const audioRef = useRef(null);
@@ -139,7 +152,47 @@ const Chessboard = () => {
   // Initialize the board
   useEffect(() => {
     initializeBoard();
+    
+    // Initialize audio after component mounts
+    audioRef.current = new Audio();
+    audioRef.current.volume = volume;
+    audioRef.current.loop = true;
+    
+    // Set initial music
+    const initialMusic = `${process.env.PUBLIC_URL}/assets/audio/politcal party lofi.mp3`;
+    audioRef.current.src = initialMusic;
+    
+    // Try to play (will be blocked by browser autoplay policy)
+    const tryPlay = () => {
+      if (audioRef.current && !isMuted) {
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.log('Autoplay prevented:', error);
+          });
+        }
+      }
+    };
+    
+    // Try to play after a short delay to handle autoplay policies
+    const playTimeout = setTimeout(tryPlay, 1000);
+    
+    // Cleanup
+    return () => {
+      clearTimeout(playTimeout);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
   }, []);
+
+  useEffect(() => {
+    if (initialGameCode) {
+      console.log('Joining game with code:', initialGameCode);
+      // Future: Add logic to load game state based on game code
+    }
+  }, [initialGameCode]);
 
   const initializeBoard = () => {
     // Create an empty 8x8 board
@@ -644,7 +697,7 @@ const Chessboard = () => {
     }
   };
 
-  // Setup audio player with better autoplay approach
+  // Setup audio player
   useEffect(() => {
     if (audioRef.current) {
       // Set initial volume and state
@@ -656,72 +709,81 @@ const Chessboard = () => {
       // Set initial music to Lofi
       audioRef.current.src = `${process.env.PUBLIC_URL}/assets/audio/politcal party lofi.mp3`;
       audioRef.current.load();
+    }
 
-      // Try to play automatically
+    // Clean up when component unmounts
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  // Start music after team is selected
+  useEffect(() => {
+    if (!showTeamSelection && audioRef.current) {
       const playAudio = () => {
         audioRef.current.play()
-          .then(() => console.log("Music started automatically"))
+          .then(() => console.log("Music started after team selection"))
           .catch(error => {
             console.log("Autoplay prevented - waiting for user interaction");
-
-            // Add global event listeners to play on first interaction
+            
             const startAudio = () => {
               if (audioRef.current && audioRef.current.paused) {
                 audioRef.current.play()
-                  .then(() => console.log("Music started after user interaction"))
-                  .catch(e => console.error("Still couldn't play audio:", e));
+                  .then(() => {
+                    console.log("Music started after user interaction");
+                    // Remove event listeners after successful play
+                    document.removeEventListener('click', startAudio);
+                    document.removeEventListener('touchstart', startAudio);
+                  })
+                  .catch(e => console.error("Couldn't play audio:", e));
               }
             };
 
             // Add listeners to document
             document.addEventListener('click', startAudio, { once: true });
             document.addEventListener('touchstart', startAudio, { once: true });
-            document.addEventListener('keydown', startAudio, { once: true });
           });
       };
 
-      // Try immediate playback
       playAudio();
-
-      // Try again after a short delay (sometimes helps)
-      setTimeout(playAudio, 1000);
     }
+  }, [showTeamSelection]);
 
-    // Clean up event listeners when component unmounts
-    return () => {
-      document.removeEventListener('click', () => { });
-      document.removeEventListener('touchstart', () => { });
-      document.removeEventListener('keydown', () => { });
-    };
-  }, []);
-
+  // Change music track
   const changeMusic = (musicType) => {
-    if (audioRef.current) {
-      // Stop the current audio completely
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.volume = volume;
+      audioRef.current.loop = true;
+    }
+    
+    // Set the new music file
+    const musicFile = musicType === 'lofi' 
+      ? 'politcal party lofi.mp3' 
+      : 'Degen.mp3';
+    
+    const newSrc = `${process.env.PUBLIC_URL}/assets/audio/${musicFile}`;
+    
+    // Only change source if it's different
+    if (audioRef.current.src !== newSrc) {
       audioRef.current.pause();
-      
-      // Determine the new music file
-      const musicFileName = musicType === 'lofi' ? 'politcal party lofi.mp3' : 'Degen.mp3';
-      const musicPath = `${process.env.PUBLIC_URL}/assets/audio/${musicFileName}`;
-
-      // Set new source and reset
-      audioRef.current.src = musicPath;
-      
-      // Play immediately if not muted
-      if (!isMuted) {
-        audioRef.current.play()
-          .then(() => {
-            console.log(`Switched to ${musicType} music successfully`);
-            setCurrentMusic(musicType);
-          })
-          .catch(err => {
-            console.error('Error playing new track:', err);
-            setCurrentMusic(musicType);
-          });
-      } else {
-        // Update music type even if muted
-        setCurrentMusic(musicType);
-      }
+      audioRef.current.src = newSrc;
+      setCurrentMusic(musicType);
+    }
+    
+    // Always try to play when changing tracks
+    const playPromise = audioRef.current.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(error => {
+        console.log('Playback failed:', error);
+        // If autoplay was prevented, show a message to the user
+        if (error.name === 'NotAllowedError') {
+          alert('Please click the play button to start the music.');
+        }
+      });
     }
   };
 
@@ -787,6 +849,10 @@ const Chessboard = () => {
 
   // Make a computer move - AI functionality
   const makeComputerMove = () => {
+    if (gameMode === 'online') {
+      console.log('No bot moves in online mode');
+      return;
+    }
     // Safety check - only move if it's computer's turn and game is active
     if (gameStatus !== 'active' || turn !== computerColor) {
       console.log("Not computer's turn or game not active");
@@ -921,14 +987,10 @@ const Chessboard = () => {
     }
   }, [turn, gameMode, computerColor, gameStatus, showTeamSelection]);
 
-  // Toggle between human and computer opponent
-  const toggleGameMode = () => {
-    if (gameStatus !== 'active') {
-      // Only allow changing mode when starting a new game
-      const newMode = gameMode === 'computer' ? 'human' : 'computer';
-      setGameMode(newMode);
-
-      // Reset the game when changing modes
+  // Set game mode to computer (removed online mode)
+  const setComputerMode = () => {
+    if (gameMode !== 'computer') {
+      setGameMode('computer');
       resetGame();
     }
   };
@@ -942,6 +1004,11 @@ const Chessboard = () => {
       // Reset the game when changing computer color
       resetGame();
     }
+  };
+
+  // Render online play modal
+  const renderOnlinePlayModal = () => {
+    return null;
   };
 
   // Render a square on the board
@@ -1359,7 +1426,7 @@ const Chessboard = () => {
           </div>
           <div className="follow-item">
             <a
-              href="https://x.com/Baloo8721"
+              href="https://x.com/Baloo__x"
               target="_blank"
               rel="noopener noreferrer"
               className="venmo-link"
@@ -1448,7 +1515,7 @@ const Chessboard = () => {
             <span className="follow-text">Follow Me</span>
           </div>
           <a
-            href="https://x.com/Baloo8721"
+            href="https://x.com/Baloo__x"
             target="_blank"
             rel="noopener noreferrer"
             className="x-button"
@@ -1463,11 +1530,10 @@ const Chessboard = () => {
           <div className="mode-toggle">
             <span className="mode-label">Game Mode:</span>
             <button
-              className={`mode-button ${gameMode === 'computer' ? 'active' : ''}`}
-              onClick={toggleGameMode}
-              disabled={gameStatus === 'active'}
+              className="mode-button active"
+              onClick={setComputerMode}
             >
-              {gameMode === 'computer' ? '🤖 Player vs Bot' : '👥 Player vs Player'}
+              🤖 Player vs Bot
             </button>
           </div>
 
@@ -1490,6 +1556,7 @@ const Chessboard = () => {
           Warning: This game is a lighthearted satire poking fun at politicians. It's all in good fun—don't take it too seriously!
         </div>
       </div>
+      {renderOnlinePlayModal()}
     </div>
   );
 };

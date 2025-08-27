@@ -2,7 +2,7 @@
   "name": "political-chess",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://Baloo8721.github.io/PoliticalCHESS-MEME-edition-",
+  "homepage": "https://Baloo__x.github.io/PoliticalCHESS-MEME-edition-",
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
@@ -11,6 +11,7 @@
     "firebase": "^11.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-router-dom": "^7.2.0",
     "react-scripts": "5.0.1",
     "socket.io-client": "^4.7.4",
     "uuid": "^11.1.0",
