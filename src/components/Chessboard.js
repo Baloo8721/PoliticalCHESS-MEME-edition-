@@ -1426,11 +1426,7 @@ const Chessboard = ({ initialGameCode = null }) => {
           </div>
           <div className="follow-item">
             <a
-<<<<<<< HEAD
-              href="https://x.com/Baloo__x"
-=======
               href="https://x.com/Baloo__X"
->>>>>>> eeefd64fd5e3688e0788f6ea5e6dbeeffdcb7078
               target="_blank"
               rel="noopener noreferrer"
               className="venmo-link"
