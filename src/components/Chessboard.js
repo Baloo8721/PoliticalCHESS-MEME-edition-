@@ -162,24 +162,10 @@ const Chessboard = ({ initialGameCode = null }) => {
     const initialMusic = `${process.env.PUBLIC_URL}/assets/audio/politcal party lofi.mp3`;
     audioRef.current.src = initialMusic;
     
-    // Try to play (will be blocked by browser autoplay policy)
-    const tryPlay = () => {
-      if (audioRef.current && !isMuted) {
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.log('Autoplay prevented:', error);
-          });
-        }
-      }
-    };
-    
-    // Try to play after a short delay to handle autoplay policies
-    const playTimeout = setTimeout(tryPlay, 1000);
+    // Don't auto-start music, will be started when team is selected
     
     // Cleanup
     return () => {
-      clearTimeout(playTimeout);
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
@@ -1308,6 +1294,10 @@ const Chessboard = ({ initialGameCode = null }) => {
                 setComputerColor('blue'); // Player plays as red (Republicans)
                 setShowTeamSelection(false);
                 setTurn('red');
+                // Start music when team is selected
+                if (audioRef.current) {
+                  audioRef.current.play().catch(e => console.log('Playback failed:', e));
+                }
                 resetGame();
               }}
             >
@@ -1329,6 +1319,10 @@ const Chessboard = ({ initialGameCode = null }) => {
                 setComputerColor('red'); // Player plays as blue (Democrats)
                 setShowTeamSelection(false);
                 setTurn('blue');
+                // Start music when team is selected
+                if (audioRef.current) {
+                  audioRef.current.play().catch(e => console.log('Playback failed:', e));
+                }
                 resetGame();
               }}
             >
